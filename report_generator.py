@@ -26,7 +26,7 @@ def create_rfe_risk_report(analyses, output_filename="RFE_Risk_Report.docx"):
     )
 
     # Analysis Sections
-    for header, markdown_analysis in analyses.item():
+    for header, markdown_analysis in analyses.items():
         doc.add_heading(f"Analysis of Section: {header}", level=2)
 
         lines = markdown_analysis.strip().replace("```markdown", "").replace("```", "").strip().split('\n')
