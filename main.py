@@ -1,5 +1,5 @@
 import sys
-from document_parser import extract_text_from_docx, extract_text_from_pdf, segment_petition
+from document_parser import extract_text_from_docx, extract_text_from_pdf, extract_text_from_txt, segment_petition
 from ai_analyzer import analyze_text_with_llm
 from report_generator import create_rfe_risk_report
 
@@ -14,6 +14,8 @@ def main(file_path):
         full_text = extract_text_from_docx(file_path)
     elif file_path.lower().endswith('.pdf'):
         full_text = extract_text_from_pdf(file_path)
+    elif file_path.lower().endswith('.txt'):
+        full_text = extract_text_from_txt(file_path)
     else:
         print("Error: Unsupported file format. Please use .docx or .pdf")
         return

@@ -22,6 +22,15 @@ def extract_text_from_pdf(file_path):
     except Exception as e:
         print(f"Error reading PDF file: {e}")
 
+def extract_text_from_txt(file_path):
+    """Extracts text from a plaintext TXT file."""
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        print(f"Error reading TXT file: {e}")
+        return None
+
 def segment_petition(full_text):
     """
     Segments the petition into a dictionary based on EB-1A criteria keywords.
