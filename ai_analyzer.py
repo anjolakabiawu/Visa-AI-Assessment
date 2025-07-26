@@ -69,7 +69,7 @@ def analyze_text_with_llm(text_segment):
     if not OPENAI_API_KEY:
         return "Error: OPENAI_API_KEY environment variable not set."
     
-    print(f" > Sending segment to AI for analysis...")
+    print(" > Sending segment to AI for analysis...")
     prompt = get_eb1a_analysis_prompt() + text_segment
 
     try:
