@@ -4,7 +4,7 @@ This project is a prototype of an AI-powered tool designed to analyze draft EB-1
 
 ### Features
 
--   **Multi-Format Ingestion:** Reads petition drafts from both `.docx` and `.pdf` files.
+-   **Multi-Format Ingestion:** Reads petition drafts from `.docx`, `.pdf`, and `.txt` files.
 -   **Intelligent Segmentation:** Automatically identifies and separates sections of the petition corresponding to specific EB-1A criteria.
 -   **AI-Powered Analysis:** Leverages a powerful LLM with a specialized prompt to act as a USCIS adjudicator, identifying weaknesses in claims.
 -   **Actionable Reporting:** Generates a professional, human-readable `.docx` report that includes severity ratings, problematic excerpts, and concrete suggestions for improvement.
@@ -16,7 +16,6 @@ This project is a prototype of an AI-powered tool designed to analyze draft EB-1
 ```bash
 git clone <your-repository-url>
 cd VisaCompanion_RFE_Analyzer
-```
 
 **2. Create a Python Virtual Environment**
 It is highly recommended to use a virtual environment to manage dependencies.
@@ -27,7 +26,7 @@ source venv/bin/activate
 
 # For Windows
 python -m venv venv
-venv\Scripts\activate
+source venv\Scripts\activate
 ```
 
 **3. Install Dependencies**
@@ -35,7 +34,6 @@ Install all the required Python packages.
 ```bash
 pip install -r requirements.txt
 ```
-*(Note: You will need to create a `requirements.txt` file containing `openai`, `python-docx`, and `PyMuPDF`)*
 
 **4. Set Environment Variable**
 The application requires an OpenAI API key. Set it as an environment variable for security.
@@ -51,28 +49,52 @@ set OPENAI_API_KEY='your-secret-key-here'
 
 Run the analysis from your terminal by passing the path to the petition file as an argument.
 
+Example 1: Running from the project's root folder
 ```bash
-python main.py path/to/your/sample_petition.docx
+python src/main.py samples/sample_petition.docx
 ```
 or
 ```bash
-python main.py path/to/your/sample_petition_2.pdf
+python src/main.py samples/sample_petition_2.pdf
 ```
 or
 ```bash
-python main.py path/to/your/sample_petition.txt
+python src/main.py samples/sample_petition.txt
+```
+Example 2: Running from inside the src/ folder
+```bash
+python main.py path/to/your/samples/sample_petition.docx
+```
+or
+```bash
+python main.py path/to/your/samples/sample_petition_2.pdf
+```
+or
+```bash
+python main.py path/to/your/samples/sample_petition.txt
 ```
 
-The script will process the file and generate a report named `RFE_Risk_Report.docx` in the root directory.
+The script will process the file and generate a report named RFE_Risk_Report.docx in the output/ directory.
 
 ### Project Structure
 
 ```
 VisaCompanion_RFE_Analyzer/
-├── main.py                # Main script to orchestrate the analysis
-├── document_parser.py     # Functions to read and segment documents
-├── ai_analyzer.py         # Handles the LLM prompt and API communication
-├── report_generator.py    # Builds the final DOCX report
-├── requirements.txt       # List of Python dependencies
-└── sample_petition.docx   # An example petition file for testing
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── Technical_Report.pdf
+│
+├── src/
+│   ├── main.py
+│   ├── document_parser.py
+│   ├── ai_analyzer.py
+│   └── report_generator.py
+│
+├── samples/
+│   ├── sample_petition.docx
+│   └── sample_petition_2.pdf
+│
+└── output/
+    └── RFE_Risk_Report.docx
 ```
