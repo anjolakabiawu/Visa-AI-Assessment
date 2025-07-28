@@ -18,7 +18,7 @@ def extract_text_from_pdf(file_path):
         text = ""
         for page in doc:
             text += page.get_text()
-        return None
+        return text
     except Exception as e:
         print(f"Error reading PDF file: {e}")
 
