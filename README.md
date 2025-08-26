@@ -1,14 +1,16 @@
-# VisaCompanion RFE Risk Analyzer
+# VisaCompanion RFE Risk Analyzer (RAG-Enhanced)
 
-This project is a prototype of an AI-powered tool designed to analyze draft EB-1A petitions for potential weaknesses that could trigger a Request for Evidence (RFE) from USCIS. The tool ingests petition documents, segments them by criteria, and uses a Large Language Model (LLM) to generate a detailed risk analysis report in the style of a professional legal memo.
+This project is an advanced prototype of an AI-powered tool designed to analyze draft EB-1A petitions for potential weaknesses that could trigger a Request for Evidence (RFE) from USCIS.
+
+This enhanced version uses a **Retrieval-Augmented Generation (RAG)** pipeline. It grounds its analysis in a knowledge base built from thousands of real USCIS Administrative Appeals Office (AAO) decisions, providing truly data-driven and evidence-based feedback.
 
 ### Features
 
 -   **Multi-Format Ingestion:** Reads petition drafts from `.docx`, `.pdf`, and `.txt` files.
--   **Intelligent Segmentation:** Automatically identifies and separates sections of the petition corresponding to specific EB-1A criteria.
--   **AI-Powered Analysis:** Leverages a powerful LLM with a specialized prompt to act as a USCIS adjudicator, identifying weaknesses in claims.
--   **Actionable Reporting:** Generates a professional, human-readable `.docx` report that includes severity ratings, problematic excerpts, and concrete suggestions for improvement.
--   **Adjudicator Persona Simulation:** Includes a "Creative Bonus" section with narrative notes from the perspective of the reviewing officer.
+-   **Data-Driven Knowledge Base:** Includes a script to scrape and process thousands of real AAO decisions into a sophisticated vector store.
+-   **RAG-Powered Analysis:** Uses a two-step AI process. An initial analysis identifies weaknesses, and a RAG system then retrieves relevant context from real legal cases to generate highly specific, evidence-based suggestions for improvement.
+-   **Actionable Reporting:** Generates a professional, human-readable `.docx` report that includes severity ratings, problematic excerpts, and concrete recommendations grounded in real-world case outcomes.
+-   **Adjudicator Persona Simulation:** Includes narrative notes from the perspective of the reviewing officer.
 
 ### Setup Instructions
 
@@ -45,13 +47,29 @@ export OPENAI_API_KEY='your-secret-key-here'
 set OPENAI_API_KEY='your-secret-key-here'
 ```
 
-### Usage
+### The Two-Step Workflow
 
-Run the analysis from your terminal by passing the path to the petition file as an argument.
+This project has two main phases: a one-time data preprocessing step, and the analysis step.
+
+**Step 1: Build the Knowledge Base (Run This Once)**
+
+First, you must process the AAO decision documents into a local vector store.
+
+**⚠️ Warning:** This process can take a long time and will use your OpenAI API credits, depending on the number of documents you process. It's recommended to start with a small number (e.g., 10-50 PDFs) by adjusting the `PDFS_TO_PROCESS` variable in `src/build_knowledge_base.py`.
+
+In your terminal, from the project's root directory, run:
+```bash
+python src/build_knowledge_base.py
+```
+
+**Step 2: Run the RFE Analysis (Run Anytime)**
+This will create a faiss_index folder in your project directory. You only need to run this script when you want to create or update your knowledge base.
+
+From the project's root directory, run the analysis from your terminal by passing the path to the petition file as an argument.
 
 Example 1: Running from the project's root folder
 ```bash
-python src/main.py samples/sample_petition.docx
+python src/main.py samples/sample_petition_1.docx
 ```
 or
 ```bash
@@ -59,7 +77,7 @@ python src/main.py samples/sample_petition_2.pdf
 ```
 or
 ```bash
-python src/main.py samples/sample_petition.txt
+python src/main.py samples/sample_petition_3.txt
 ```
 Example 2: Running from inside the src/ folder
 ```bash

@@ -1,14 +1,27 @@
 import sys
 import os
 from document_parser import extract_text_from_docx, extract_text_from_pdf, extract_text_from_txt, segment_petition
-from ai_analyzer import analyze_text_with_llm
+from ai_analyzer import analyze_text_with_rag
 from report_generator import create_rfe_risk_report
+from rag_enhancer import RAGSystem
 
 # The main function takes the file path directly 
 def main(input_file_path):
     """
     Main function to orchestrate the RFE analysis process.
     """
+    
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    faiss_index_path = os.path.join(project_root, 'faiss_index')
+    output_dir = os.path.join(project_root, 'output')
+
+    # --- Initialize the RAG system by loading the pre-built index ---
+    try:
+        rag_system = RAGSystem(faiss_index_path)
+    except FileNotFoundError as e:
+        print(f"\nFATAL ERROR: {e}")
+        print("Please run 'python src/build_knowledge_base.py' to create the knowledge base first.")
+        return
     
     print(f"Starting analysis for: {input_file_path}")
 
@@ -33,12 +46,12 @@ def main(input_file_path):
         print("Error: Could not segment the document. Analyzing as a whole.")
         segments = {"Full Petition": full_text}
     
-    # Analyze Each Segment with AI
+    # Analyze Each Segment with the RAG Powered System
     all_analyses = {}
     for header, text_chunk in segments.items():
         print(f"\n--- Analyzing Segment: {header}  ---")
         if len(text_chunk) > 100:
-            analysis = analyze_text_with_llm(text_chunk)
+            analysis = analyze_text_with_rag(text_chunk, rag_system)
             if analysis:
                 all_analyses[header] = analysis
         else:
@@ -46,10 +59,9 @@ def main(input_file_path):
     
     # Generate Final Report
     if all_analyses:
-        # We only use this logic to reliably find the output folder
-        project_root = os.path.dirname(os.path.abspath(__file__)) # Go to src/
-        project_root = os.path.dirname(project_root) # Go to project root
-        output_filename = os.path.join(project_root, 'output', 'RFE_Risk_Report.docx')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        output_filename = os.path.join(output_dir, 'RFE_Risk_Report.docx')
         create_rfe_risk_report(all_analyses, output_filename=output_filename)
     else:
         print("No analysis was generated. The report will not be created.")
