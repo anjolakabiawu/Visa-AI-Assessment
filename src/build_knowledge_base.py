@@ -8,8 +8,10 @@ from langchain_community.vectorstores import FAISS
 from langchain.schema import Document
 
 # --- SETTINGS ---
-MASTER_FILE_PATH = os.path.join('..', 'Master_file.txt')
-FAISS_INDEX_PATH = os.path.join('..', 'faiss_index')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+MASTER_FILE_PATH = os.path.join(project_root, 'Master_file.txt')
+FAISS_INDEX_PATH = os.path.join(project_root, 'faiss_index')
 # Number of PDFs to process (starting with a small number for testing)
 PDFS_TO_PROCESS = 20
 
