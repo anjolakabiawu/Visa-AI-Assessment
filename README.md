@@ -98,20 +98,26 @@ The script will process the file and generate a report named RFE_Risk_Report.doc
 
 ```
 VisaCompanion_RFE_Analyzer/
-├── .gitignore
 ├── README.md
 ├── requirements.txt
 ├── Technical_Report.pdf
+├── Master_file.txt
+│
+├── faiss_index/
+│   ├── index.faiss
+│   └── index.pkl
 │
 ├── src/
+│   ├── build_knowledge_base.py
 │   ├── main.py
 │   ├── document_parser.py
 │   ├── ai_analyzer.py
-│   └── report_generator.py
+│   └── rag_enhancer.py
 │
 ├── samples/
-│   ├── sample_petition.docx
+│   └── sample_petition_1.docx
 │   └── sample_petition_2.pdf
+│   └── sample_petition_3.txt
 │
 └── output/
     └── RFE_Risk_Report.docx
