@@ -1,6 +1,7 @@
 import openai
 import os
 from dotenv import load_dotenv
+from rag_enhancer import RAGSystem
 
 load_dotenv()
 
@@ -87,3 +88,37 @@ def analyze_text_with_llm(text_segment):
     except Exception as e:
         print(f"An error occurred with the OpenAI API: {e}")
         return f"Error: Could not get analysis. Details: {e}"
+    
+def  analyze_text_with_rag(text_segment, rag_system):
+    """
+    Analyzes a text segment by first getting a baseline analysis,
+    then using RAG to enhance the suggestions in the table.
+    """
+    print("=== Running Initial Analysis ===")
+    initial_analysis_md = analyze_text_with_llm(text_segment)
+    
+    if not initial_analysis_md or '|' not in initial_analysis_md:
+        return initial_analysis_md
+    
+    print("\n=== Enhancing Suggestions with RAG ===")
+    
+    lines = initial_analysis_md.strip().split('\n')
+    new_lines = []
+    
+    for line in lines:
+        # Check for a valid markdown table row
+        if line.startswith('|') and '===' not in line and 'Severity' not in line:
+            parts = [p.strip() for p in line.strip('|').split('|')]
+            if len(parts) == 4:
+                severity, weakness, exercpt, old_suggestion = parts
+                
+                enhanced_suggestion = rag_system.get_enhanced_suggestion(weakness)
+                clean_suggestion = enhanced_suggestion.replace('\n', '').replace('|', ' ')
+                
+                new_line = f"| {severity} | {weakness} | {exercpt} | {clean_suggestion} |"
+                new_lines.append(new_line)
+            else:
+                new_lines.append(line)
+        else:
+            new_lines.append(line)
+    return "\n".join(new_lines)
