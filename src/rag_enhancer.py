@@ -19,4 +19,38 @@ class RAGSystem:
         print("  - Vector store loaded successfully.")
         
         # Step 2: Set up LLM and prompt template
+        self.llm = ChatOpenAI(model_name="gpt-4o")
+        self.prompt = self._create_rag_prompt()
         
+    def _create_rag_prompt(self):
+        template = """
+        You are an expert legal assistant. Your task is to provide an enhanced, evidence-based suggestion to fix a weakness in an immigration petition.
+        Use the following retrieved context from real USCIS decision documents to provide a highly specific and actionable recommendation.
+        Your suggestion should directly reference the standards or failure patterns mentioned in the context.
+
+        CONTEXT FROM REAL CASES:
+        {context}
+
+        IDENTIFIED WEAKNESS IN CURRENT PETITION:
+        {question}
+
+        ENHANCED, EVIDENCE-BASED SUGGESTION:
+        """
+        return PromptTemplate(template=template, input_variables=["context", "question"])
+    
+    def get_enhanced_suggestion(self, weakness_description):
+        """
+        Takes a weakness description, retrieves relevant context, and generates an enhanced suggestion.
+        """
+        print(f"  > RAG: Retrieving context for weakness: '{weakness_description}'")
+        
+        rag_chain = (
+            {"context": self.retriever, "question": RunnablePassthrough()}
+            | self.prompt
+            | self.llm
+            | StrOutputParser()
+        )
+        
+        enhanced_suggestion = rag_chain.invoke(weakness_description)
+        print("  < RAG: Enhanced suggestion received.")
+        return enhanced_suggestion
