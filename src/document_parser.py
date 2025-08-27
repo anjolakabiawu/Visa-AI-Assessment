@@ -96,16 +96,7 @@ def segment_petition(full_text):
     parts = pattern.split(full_text)
     
     segments = {}
-    # Regex to find "Criterion X", "Criterion X:", "Evidence for X", etc.
-    # It captures the criterion name and the text that follows it.
-    pattern = re.compile(
-        r"(Criterion \d{1,2}:?[\s\w,]+|Personal Statement|Background|Summary of Evidence)",
-        re.IGNORECASE
-    )
-    
-    parts = pattern.split(full_text)
     if len(parts) < 3:
-        # If no sections are found, treat the whole document as one segment
         return {"Full Petition": full_text}
 
     # The split results in [text_before_first_match, match1, text1, match2, text2, ...]
