@@ -3,7 +3,6 @@ import fitz  # PyMuPDF
 import re
 import openai
 
-# --- The text extraction functions remain the same ---
 def extract_text_from_docx(file_path):
     """Extracts text from a DOCX file."""
     try:
@@ -98,7 +97,6 @@ def segment_petition(full_text):
         print("  - LLM could not identify headers. Analyzing as a whole document.")
         return {"Full Petition": full_text}
 
-    # --- THIS IS THE FIX ---
     # Instead of matching text, we extract and match the section numbers.
     section_numbers = _extract_section_numbers(llm_headers)
     
@@ -109,7 +107,6 @@ def segment_petition(full_text):
     print(f"  - Extracted section numbers for splitting: {section_numbers}")
 
     # Create a regex that looks for the start of a line (^) followed by the section number.
-    # This is extremely robust.
     escaped_patterns = [re.escape(sn) for sn in section_numbers]
     pattern_string = "|".join([f"^{p}" for p in escaped_patterns])
     
