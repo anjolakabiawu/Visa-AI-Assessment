@@ -93,7 +93,7 @@ python main.py path/to/your/samples/sample_petition.txt
 ```
 or
 ```bash
-python src/main.py samples\EB1A.pdf  
+python src/main.py samples/EB1A.pdf  
 ```
 
 The script will process the file and generate a report named RFE_Risk_Report.docx in the output/ directory.
