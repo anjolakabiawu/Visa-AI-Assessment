@@ -29,38 +29,22 @@ def main():
     documents = loader.load()
     print(f"Succesfully loaded the policy manual.")
     
-    # Step 2: Scrape text and create LangChain Documents
-    langchain_docs = []
-    for i, link in enumerate(links_to_process):
-        print(f"Processing document {i+1}/{len(links_to_process)}: {link}")
-        text = extract_text_from_url(link)
-        if text:
-            # Create a LangChain Document, storing the URL in metadata
-            doc = Document(page_content=text, metadata={"source": link})
-            langchain_docs.append(doc)
-    
-    if not langchain_docs:
-        print("No documents were processed successfully. Exiting.")
-        return
-    
-    print(f"\nSuccessfully processed {len(langchain_docs)} documents.")
-    
-    # Step 3: Split documents into chunks
+    # Step 2: Split documents into chunks
     print("Splitting documents into chunks...")
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-    chunks = text_splitter.split_documents(langchain_docs)
+    chunks = text_splitter.split_documents(documents)
     print(f"Created {len(chunks)} text chunks.")
     
-    # Step 4: Create embeddings and build FAISS vector store
+    # Step 3: Create embeddings and build FAISS vector store
     print("Creating embeddings and building the FAISS vector store...")
     print("(This may take some time and download a model on the first run)")
     embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
     vectorstore = FAISS.from_documents(chunks, embeddings)
     print("Vector store created successfully.")
     
-    # Step 5: Save the vector store to disk
-    if not os.path.exists(FAISS_INDEX_PATH):
-        os.makedirs(FAISS_INDEX_PATH)
+    # Step 4: Save the vector store to disk
+    if os.path.exists(FAISS_INDEX_PATH):
+        print(f"Note: Overwriting exisiting index at '{FAISS_INDEX_PATH}'")
     vectorstore.save_local(FAISS_INDEX_PATH)
     print(f"✅ Knowledge base successfully built and saved to '{FAISS_INDEX_PATH}'")
 
