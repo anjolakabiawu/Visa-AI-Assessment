@@ -1,11 +1,8 @@
 import os
-import requests
-import fitz  # PyMuPDF
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.schema import Document
 
 # --- SETTINGS ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -25,7 +22,7 @@ def main():
         print("Please create the file and paste the USCIS EB-1A policy manual text into it.")
         return
     
-    loader = TextLoader(POLICY_MANUAL_PATH)
+    loader = TextLoader(POLICY_MANUAL_PATH, encoding="utf-8")
     documents = loader.load()
     print(f"Succesfully loaded the policy manual.")
     
