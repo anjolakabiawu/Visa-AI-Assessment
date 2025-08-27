@@ -1,6 +1,7 @@
 import docx
 import fitz
 import re
+import openai
 
 def extract_text_from_docx(file_path):
     """Extracts text from a DOCX file."""
@@ -31,12 +32,69 @@ def extract_text_from_txt(file_path):
         print(f"Error reading TXT file: {e}")
         return None
 
+def _get_dynamic_headers_with_llm(text_sample):
+    """
+    Uses an LLM to read the beginning of a petition and extract the main section headers
+    that introduce the evidence for the EB-1A criteria.
+    """
+    print("  - Using LLM to identify document structure...")
+    prompt = f"""
+    The following is the beginning of an EB-1A petition.
+    Read it carefully and identify the exact titles of the main sections that present the evidence for the claimed criteria.
+    Examples might look like "2.1 Evidence of original scientific contributions..." or "1.6 Dr. Doe has widely published..."
+    
+    List only the exact, full titles of these sections. Separate each title with a pipe character (|).
+    Provide only the pipe-separated list and nothing else.
+    
+    DOCUMENT TEXT:
+    ===
+    {text_sample}
+    ===
+    """
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "user", "content": prompt}],
+            temperature=0.0,
+        )
+        headers_string = response.choices[0].message.content.strip()
+        print(f"  - LLM identified headers: {headers_string}")
+        return headers_string.split('|')
+    except Exception as e:
+        print(f"  - Error during LLM header extraction: {e}")
+        return []
+
 def segment_petition(full_text):
     """
-    Segments the petition into a dictionary based on EB-1A criteria keywords.
-    This uses regular expressions to find section headers.
+    Segments the petition using intelligent two-pass method...
     """
+    if not full_text:
+        return {}
+    
     print("Segmenting document...")
+    
+    # Step 1: Get the dynamic headers from the first ~8000 characters
+    text_sample = full_text[:8000]
+    headers = _get_dynamic_headers_with_llm(text_sample)
+    
+    # Clean up any empty strings that might result from splitting
+    cleaned_headers = [h.strip() for h in headers if h.strip()]
+    
+    if not cleaned_headers:
+        print("  - LLM could not identify headers. Analyzing as a whole document.")
+        return {"Full Petition": full_text}
+    
+    # Step 2: Dynamically build a regex and split the document
+    escaped_headers = [re.escape(h) for h in cleaned_headers]
+    # Included Exhibits as a fallback
+    base_patterns = ["Exhibits? \\d+"]
+    
+    pattern_string = "|".join(escaped_headers + base_patterns)
+    pattern = re.compile(f"{pattern_string}", re.IGNORECASE)
+    
+    parts = pattern.split(full_text)
+    
     segments = {}
     # Regex to find "Criterion X", "Criterion X:", "Evidence for X", etc.
     # It captures the criterion name and the text that follows it.
