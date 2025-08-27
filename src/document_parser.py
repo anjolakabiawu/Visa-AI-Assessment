@@ -86,6 +86,8 @@ def segment_petition(full_text):
         return {"Full Petition": full_text}
     
     # Step 2: Dynamically build a regex and split the document
+    short_headers = [" ".join(h.split()[:5]) for h in cleaned_headers]
+    
     escaped_headers = [re.escape(h) for h in cleaned_headers]
     # Included Exhibits as a fallback
     base_patterns = ["Exhibits? \\d+"]
@@ -97,15 +99,21 @@ def segment_petition(full_text):
     
     segments = {}
     if len(parts) < 3:
+        print("  - Regex split failed to find any matching headers. Analyzing as a whole document.")
         return {"Full Petition": full_text}
 
-    # The split results in [text_before_first_match, match1, text1, match2, text2, ...]
-    # We iterate through the matches and their corresponding texts.
-    for i in range(1, len(parts), 2):
-        header = parts[i].strip()
-        content = parts[i+1].strip()
+    headers_found = parts[1::2]
+    contents_found = parts[2:2]
+    
+    for header, content in zip(headers_found, contents_found):
+        header = header.strip()
+        content = content.strip()
         if content: # Only add sections with content
             segments[header] = content
             print(f"  - Found segment: '{header}'")
+    
+    if not segments:
+        print("  - No content found for any identified segments. Analyzing as a whole document.")
+        return {"Full Petition": full_text}
             
     return segments

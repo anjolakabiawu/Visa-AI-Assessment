@@ -61,7 +61,7 @@ def main(input_file_path):
     if all_analyses:
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        output_filename = os.path.join(output_dir, 'RFE_Risk_Report.docx')
+        output_filename = os.path.join(output_dir, 'RFE_Risk_Report_Real.docx')
         create_rfe_risk_report(all_analyses, output_filename=output_filename)
     else:
         print("No analysis was generated. The report will not be created.")
