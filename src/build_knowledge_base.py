@@ -15,37 +15,19 @@ FAISS_INDEX_PATH = os.path.join(project_root, 'faiss_index')
 # Number of PDFs to process (starting with a small number for testing)
 #PDFS_TO_PROCESS = 20
 
-def extract_text_from_url(url):
-    """Downloads a PDF from a URL and extracts its text."""
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status() # Raise an error for bad responses
-        
-        with fitz.open(stream=response.content, filetype="pdf") as doc:
-            text = ""
-            for page in doc:
-                text += page.get_text()
-        return text
-    except requests.exceptions.RequestException as e:
-        print(f" - Error fetching URL {url}: {e}")
-    except Exception as e:
-        print(f" - Error processing PDF from {url}: {e}")
-    return None
-
 def main():
-    """Main function to build and save the knowledge base."""
-    print("=== Starting Knowledge Base Construction ===")
+    """Main function to build and save the knowledge base from the local policy manual file."""
+    print("=== Starting Knowledge Base Construction from USCIS Policy Manual ===")
     
-    # Step 1: Read URLs from Master_file.txt
+    # Step 1: Load the source document
     if not os.path.exists(POLICY_MANUAL_PATH):
-        print(f"Error: {POLICY_MANUAL_PATH} not found.")
+        print(f"Error: Policy manual file not found at '{POLICY_MANUAL_PATH}'")
+        print("Please create the file and paste the USCIS EB-1A policy manual text into it.")
         return
     
-    with open(POLICY_MANUAL_PATH, 'r') as f:
-        all_links = [line.strip() for line in f if line.strip()]
-    
-    links_to_process = all_links[:PDFS_TO_PROCESS]
-    print(f"Found {len(all_links)} total links. Processing the first {len(links_to_process)}.")
+    loader = TextLoader(POLICY_MANUAL_PATH)
+    documents = loader.load()
+    print(f"Succesfully loaded the policy manual.")
     
     # Step 2: Scrape text and create LangChain Documents
     langchain_docs = []
