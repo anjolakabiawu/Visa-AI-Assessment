@@ -70,14 +70,17 @@ def _get_dynamic_headers_with_llm(text_sample):
         return []
 
 def _extract_section_numbers(headers):
-    """Extracts patterns like '1.6' or '2.4.1' from a list of headers."""
+    """
+    Extracts patterns like '1.6' or '2.4.1' from a list of headers.
+    This version is more robust and doesn't require the header to start with a number.
+    """
     section_patterns = []
     for h in headers:
-        # Find patterns like 1.6, 2.1, 2.4.1, etc.
-        match = re.search(r'^\d+(\.\d+)*', h)
+        match = re.search(r'\d+(\.\d+)*', h)
         if match:
             section_patterns.append(match.group(0))
     return section_patterns
+
 
 def segment_petition(full_text):
     """
