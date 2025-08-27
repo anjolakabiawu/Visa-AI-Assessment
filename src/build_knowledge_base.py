@@ -10,10 +10,10 @@ from langchain.schema import Document
 # --- SETTINGS ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(script_dir)
-MASTER_FILE_PATH = os.path.join(project_root, 'Master_file.txt')
+POLICY_MANUAL_PATH = os.path.join(project_root, 'eb1a_policy_manual.txt')
 FAISS_INDEX_PATH = os.path.join(project_root, 'faiss_index')
 # Number of PDFs to process (starting with a small number for testing)
-PDFS_TO_PROCESS = 20
+#PDFS_TO_PROCESS = 20
 
 def extract_text_from_url(url):
     """Downloads a PDF from a URL and extracts its text."""
@@ -37,11 +37,11 @@ def main():
     print("=== Starting Knowledge Base Construction ===")
     
     # Step 1: Read URLs from Master_file.txt
-    if not os.path.exists(MASTER_FILE_PATH):
-        print(f"Error: {MASTER_FILE_PATH} not found.")
+    if not os.path.exists(POLICY_MANUAL_PATH):
+        print(f"Error: {POLICY_MANUAL_PATH} not found.")
         return
     
-    with open(MASTER_FILE_PATH, 'r') as f:
+    with open(POLICY_MANUAL_PATH, 'r') as f:
         all_links = [line.strip() for line in f if line.strip()]
     
     links_to_process = all_links[:PDFS_TO_PROCESS]
