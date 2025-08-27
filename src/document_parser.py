@@ -1,8 +1,9 @@
 import docx
-import fitz
+import fitz  # PyMuPDF
 import re
 import openai
 
+# --- The text extraction functions remain the same ---
 def extract_text_from_docx(file_path):
     """Extracts text from a DOCX file."""
     try:
@@ -22,7 +23,8 @@ def extract_text_from_pdf(file_path):
         return text
     except Exception as e:
         print(f"Error reading PDF file: {e}")
-
+        return None
+    
 def extract_text_from_txt(file_path):
     """Extracts text from a plaintext TXT file."""
     try:
@@ -34,28 +36,30 @@ def extract_text_from_txt(file_path):
 
 def _get_dynamic_headers_with_llm(text_sample):
     """
-    Uses an LLM to read the beginning of a petition and extract the main section headers
-    that introduce the evidence for the EB-1A criteria.
+    Uses an LLM to read the beginning of a petition and extract the main
+    section headers that introduce evidence for the EB-1A criteria.
     """
     print("  - Using LLM to identify document structure...")
     prompt = f"""
-    The following is the beginning of an EB-1A petition.
-    Read it carefully and identify the exact titles of the main sections that present the evidence for the claimed criteria.
-    Examples might look like "2.1 Evidence of original scientific contributions..." or "1.6 Dr. Doe has widely published..."
+    The following is the beginning of an EB-1A petition document.
+    Your task is to identify the primary section headers that introduce distinct arguments or criteria.
     
+    These headers typically start with a numbering scheme like 'Section X', 'X.Y', or 'X.Y.Z' (e.g., '1.1', '1.2', '2.1.1').
+    
+    Scan the document from the beginning and list all such headers you find. Do not include items from a table of contents that are just lists; focus on the actual headers in the body of the text that are followed by paragraphs.
+
     List only the exact, full titles of these sections. Separate each title with a pipe character (|).
     Provide only the pipe-separated list and nothing else.
-    
+
     DOCUMENT TEXT:
-    ===
+    ---
     {text_sample}
-    ===
+    ---
     """
     try:
         response = openai.chat.completions.create(
             model="gpt-4o",
-            messages=[
-                {"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
         )
         headers_string = response.choices[0].message.content.strip()
@@ -65,55 +69,81 @@ def _get_dynamic_headers_with_llm(text_sample):
         print(f"  - Error during LLM header extraction: {e}")
         return []
 
+def _extract_section_numbers(headers):
+    """Extracts patterns like '1.6' or '2.4.1' from a list of headers."""
+    section_patterns = []
+    for h in headers:
+        # Find patterns like 1.6, 2.1, 2.4.1, etc.
+        match = re.search(r'^\d+(\.\d+)*', h)
+        if match:
+            section_patterns.append(match.group(0))
+    return section_patterns
+
 def segment_petition(full_text):
     """
-    Segments the petition using intelligent two-pass method...
+    Segments the petition by finding section numbers identified by an LLM.
     """
     if not full_text:
         return {}
+        
+    print("Segmenting document using intelligent two-pass method...")
     
-    print("Segmenting document...")
-    
-    # Step 1: Get the dynamic headers from the first ~8000 characters
     text_sample = full_text[:8000]
-    headers = _get_dynamic_headers_with_llm(text_sample)
+    llm_headers = _get_dynamic_headers_with_llm(text_sample)
     
-    # Clean up any empty strings that might result from splitting
-    cleaned_headers = [h.strip() for h in headers if h.strip()]
-    
-    if not cleaned_headers:
+    if not llm_headers:
         print("  - LLM could not identify headers. Analyzing as a whole document.")
         return {"Full Petition": full_text}
+
+    # --- THIS IS THE FIX ---
+    # Instead of matching text, we extract and match the section numbers.
+    section_numbers = _extract_section_numbers(llm_headers)
     
-    # Step 2: Dynamically build a regex and split the document
-    short_headers = [" ".join(h.split()[:5]) for h in cleaned_headers]
+    if not section_numbers:
+        print("  - Could not extract section numbers from LLM headers. Analyzing as a whole.")
+        return {"Full Petition": full_text}
+
+    print(f"  - Extracted section numbers for splitting: {section_numbers}")
+
+    # Create a regex that looks for the start of a line (^) followed by the section number.
+    # This is extremely robust.
+    escaped_patterns = [re.escape(sn) for sn in section_numbers]
+    pattern_string = "|".join([f"^{p}" for p in escaped_patterns])
     
-    escaped_headers = [re.escape(h) for h in cleaned_headers]
-    # Included Exhibits as a fallback
-    base_patterns = ["Exhibits? \\d+"]
+    # We also include "Exhibit" as a fallback pattern
+    pattern_string += "|Exhibit \\d+"
     
-    pattern_string = "|".join(escaped_headers + base_patterns)
-    pattern = re.compile(f"{pattern_string}", re.IGNORECASE)
+    # Use MULTILINE flag to make '^' work on each line
+    pattern = re.compile(f"({pattern_string})", re.MULTILINE)
     
     parts = pattern.split(full_text)
     
     segments = {}
     if len(parts) < 3:
-        print("  - Regex split failed to find any matching headers. Analyzing as a whole document.")
+        print("  - Regex split failed to find any matching section numbers. Analyzing as a whole document.")
         return {"Full Petition": full_text}
 
+    initial_content = parts[0].strip()
+    if initial_content:
+        segments["Cover Letter / Introduction"] = initial_content
+
     headers_found = parts[1::2]
-    contents_found = parts[2:2]
-    
-    for header, content in zip(headers_found, contents_found):
-        header = header.strip()
-        content = content.strip()
-        if content: # Only add sections with content
-            segments[header] = content
-            print(f"  - Found segment: '{header}'")
-    
+    contents_found = parts[2::2]
+
+    for header_match, content in zip(headers_found, contents_found):
+        full_content = (header_match + content).strip()
+        first_line_break = full_content.find('\n')
+        if first_line_break == -1:
+            full_header = full_content[:100] # Limit header length
+        else:
+            full_header = full_content[:first_line_break].strip()
+
+        if full_content and full_header:
+            segments[full_header] = full_content
+            print(f"  - Found segment: '{full_header}'")
+            
     if not segments:
-        print("  - No content found for any identified segments. Analyzing as a whole document.")
+        print("  - No content found for any identified segments. Analyzing as a whole.")
         return {"Full Petition": full_text}
             
     return segments
